@@ -120,8 +120,7 @@ flowchart TD
     I --> J[Risk Scoring & Composite Assessment]
     J --> K[Generate Structured Assessment JSON]
     K --> L[CLI Output / Export]
-    L --> M[Optional: Web UI / Dashboard]
-    M --> N[Optional: Cross-Asset Comparison / Visualization]
+
 
 ```
 
@@ -137,8 +136,7 @@ flowchart TD
 - Cleaner separation of **crawler** and **scraper** outputs
 - Framework iteration supports **subsection integrity** and **redundancy control**
 - CLI fully supports optional flags for references, framework version, and depth
-- Output layer ready for dashboards, exports, and multi-asset reuse
-- Optional future enhancements clearly marked
+
 
 Instructions for use:
 
