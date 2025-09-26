@@ -10,12 +10,13 @@ program
   .option("--asset <string>", "Asset name")
   .option("--issuer <string>", "Issuer name")
   .option("--addRef <url...>", "Add reference URL(s)")
-  .option("--removeRef <key...>", "Remove default reference(s) by key: coingecko, etherscan, defillama")
+  .option("--removeRef <urlOrSubstring...>", "Remove reference(s) by exact URL or substring match")
   .option("--addFile <path...>", "Add local file(s) as references (txt/md/html/pdf/docx)")
   .option("--depth <number>", "Crawler depth", (v) => parseInt(v, 10), 1)
   .option("--framework <name>", "Framework to use", "StablecoinFrameworkV1")
   .option("--usePerplexity", "Enable Perplexity LLM enrichment", false)
   .option("--perplexityModel <name>", "Perplexity model (e.g., sonar)")
+  .option("--assetRefs <modulePath>", "Path to asset reference module (e.g., ./references/USDFReferences)")
   .parse(process.argv);
 
 async function main() {
@@ -29,6 +30,7 @@ async function main() {
   const frameworkName = (opts.framework as string) ?? "StablecoinFrameworkV1";
   const usePerplexity = Boolean(opts.usePerplexity);
   const perplexityModel = (opts.perplexityModel as string | undefined) ?? undefined;
+  const assetRefsModule = (opts.assetRefs as string | undefined) ?? undefined;
 
   if (!asset || !issuer) {
     console.error("--asset and --issuer are required");
@@ -41,10 +43,19 @@ async function main() {
     process.exit(1);
   }
 
+  let baseReferences = [] as AssetInput["references"];
+  if (assetRefsModule) {
+    const modPath = assetRefsModule.startsWith(".") ? assetRefsModule : `./${assetRefsModule}`;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const loaded = require(modPath);
+    const refs = (loaded?.default ?? loaded?.[`${asset}References`] ?? loaded?.References ?? loaded?.["USDFReferences"]) as AssetInput["references"] | undefined;
+    if (Array.isArray(refs)) baseReferences = refs;
+  }
+
   const input: AssetInput = {
     name: asset,
     issuer: issuer,
-    references: (addRef ?? []).map((url) => ({ type: "manual", url })),
+    references: baseReferences,
   };
 
   const assessment = await runAssessment(input, StablecoinFrameworkV1, {

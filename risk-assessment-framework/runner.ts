@@ -1,5 +1,5 @@
 import { AssetInput, Assessment, RiskAssessmentFramework, RiskFrameworkSection } from "./framework";
-import { buildDefaultReferences, applyReferenceEdits } from "./utils/references";
+import { applyReferenceUrlEdits } from "./utils/references";
 import { bfsCrawl } from "./utils/crawler";
 import { readLocalFilesAsReferences } from "./utils/files";
 import { callPerplexity } from "./utils/llm";
@@ -31,10 +31,9 @@ export async function runAssessment(
   const depth = options.depth ?? 1;
 
   // Build references
-  const defaults = buildDefaultReferences();
   const fileRefs = await readLocalFilesAsReferences(options.addFile ?? []);
-  const base = [...defaults, ...assetInput.references, ...fileRefs];
-  const finalReferences = applyReferenceEdits(base, options.addRef, options.removeRef);
+  const base = [...assetInput.references, ...fileRefs];
+  const finalReferences = applyReferenceUrlEdits(base, options.addRef, options.removeRef);
 
   // Crawl
   // TODO: Consider throttling, robots.txt, and domain allowlist

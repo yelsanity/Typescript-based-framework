@@ -17,10 +17,9 @@ function fillPlaceholders(text, asset, issuer) {
 async function runAssessment(assetInput, framework, options = {}) {
     const depth = options.depth ?? 1;
     // Build references
-    const defaults = (0, references_1.buildDefaultReferences)();
     const fileRefs = await (0, files_1.readLocalFilesAsReferences)(options.addFile ?? []);
-    const base = [...defaults, ...assetInput.references, ...fileRefs];
-    const finalReferences = (0, references_1.applyReferenceEdits)(base, options.addRef, options.removeRef);
+    const base = [...assetInput.references, ...fileRefs];
+    const finalReferences = (0, references_1.applyReferenceUrlEdits)(base, options.addRef, options.removeRef);
     // Crawl
     // TODO: Consider throttling, robots.txt, and domain allowlist
     const crawled = await (0, crawler_1.bfsCrawl)(finalReferences.map((r) => r.url), { depth, sameOriginOnly: false });
