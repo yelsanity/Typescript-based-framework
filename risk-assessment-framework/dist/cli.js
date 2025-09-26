@@ -11,8 +11,11 @@ program
     .option("--issuer <string>", "Issuer name")
     .option("--addRef <url...>", "Add reference URL(s)")
     .option("--removeRef <key...>", "Remove default reference(s) by key: coingecko, etherscan, defillama")
+    .option("--addFile <path...>", "Add local file(s) as references (txt/md/html/pdf/docx)")
     .option("--depth <number>", "Crawler depth", (v) => parseInt(v, 10), 1)
     .option("--framework <name>", "Framework to use", "StablecoinFrameworkV1")
+    .option("--usePerplexity", "Enable Perplexity LLM enrichment", false)
+    .option("--perplexityModel <name>", "Perplexity model (e.g., sonar)")
     .parse(process.argv);
 async function main() {
     const opts = program.opts();
@@ -20,8 +23,11 @@ async function main() {
     const issuer = opts.issuer;
     const addRef = opts.addRef ?? [];
     const removeRef = opts.removeRef ?? [];
+    const addFile = opts.addFile ?? [];
     const depth = opts.depth;
     const frameworkName = opts.framework ?? "StablecoinFrameworkV1";
+    const usePerplexity = Boolean(opts.usePerplexity);
+    const perplexityModel = opts.perplexityModel ?? undefined;
     if (!asset || !issuer) {
         console.error("--asset and --issuer are required");
         process.exit(1);
@@ -39,7 +45,10 @@ async function main() {
     const assessment = await (0, runner_1.runAssessment)(input, framework_1.StablecoinFrameworkV1, {
         addRef,
         removeRef,
+        addFile,
         depth,
+        usePerplexity,
+        perplexityModel,
     });
     // Output to stdout
     console.log(JSON.stringify(assessment, null, 2));

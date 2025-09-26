@@ -1,11 +1,16 @@
 import { AssetInput, Assessment, RiskAssessmentFramework, RiskFrameworkSection } from "./framework";
 import { buildDefaultReferences, applyReferenceEdits } from "./utils/references";
 import { bfsCrawl } from "./utils/crawler";
+import { readLocalFilesAsReferences } from "./utils/files";
+import { callPerplexity } from "./utils/llm";
 
 export interface RunOptions {
   depth?: number;
   addRef?: string[];
   removeRef?: string[];
+  addFile?: string[];
+  usePerplexity?: boolean;
+  perplexityModel?: string;
 }
 
 function fillPlaceholders(text: string, asset: string, issuer: string): string {
@@ -27,7 +32,8 @@ export async function runAssessment(
 
   // Build references
   const defaults = buildDefaultReferences();
-  const base = [...defaults, ...assetInput.references];
+  const fileRefs = await readLocalFilesAsReferences(options.addFile ?? []);
+  const base = [...defaults, ...assetInput.references, ...fileRefs];
   const finalReferences = applyReferenceEdits(base, options.addRef, options.removeRef);
 
   // Crawl
@@ -44,13 +50,31 @@ export async function runAssessment(
 
   for (const section of framework.sections) {
     const guide = fillPlaceholders(section.guide, assetInput.name, assetInput.issuer);
-    // TODO: Plug LLM enrichment here with guide + references to produce typed output per section
-    // For now, return the filled guide and references snapshot for each section
+    let llmOutput: string | undefined;
+    if (options.usePerplexity) {
+      const context = references
+        .slice(0, 20)
+        .map((r) => `- ${r.url}${r.scrapedContent ? `\n  ${r.scrapedContent.slice(0, 800)}` : ""}`)
+        .join("\n");
+      const prompt = `You are to produce structured analysis for the section titled: "${section.title}".\n` +
+        `Follow the guide below and return a concise, risk-first analysis.\n` +
+        `Guide:\n${guide}\n\n` +
+        `Context references (truncated):\n${context}`;
+      try {
+        llmOutput = await callPerplexity([
+          { role: "system", content: "You are a precise DeFi risk analyst. Use only provided context." },
+          { role: "user", content: prompt },
+        ], { model: options.perplexityModel ?? "sonar", temperature: 0.2, maxTokens: 1400 });
+      } catch (e: any) {
+        llmOutput = `LLM call failed: ${e?.message ?? e}`;
+      }
+    }
     results[section.id] = {
       title: section.title,
       outputType: section.outputType,
       guide,
-      references: references.slice(0, 10), // limit for preview
+      references: references.slice(0, 10),
+      llm: options.usePerplexity ? llmOutput : undefined,
     } as any;
   }
 
