@@ -1,0 +1,25 @@
+{
+  "name": "risk-assessment-framework",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TypeScript-based risk assessment framework with modular sections, crawler, and CLI",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "ts-node cli.ts",
+    "cli": "ts-node cli.ts",
+    "run:example": "ts-node cli.ts --asset \"USDF\" --issuer \"XYZ Foundation\" --addRef \"https://xyzfoundation.org/usdf\" --removeRef \"etherscan\" --depth 2 --framework StablecoinFrameworkV1"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "cheerio": "^1.0.0",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}
+
